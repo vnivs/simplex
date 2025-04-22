@@ -75,24 +75,28 @@ def standardization_lp(c, A ,b, sense = "min", constraint_types = None, variable
     # 变量顺序：原始变量->自由变量转换后添加的变量->剩余变量->松弛变量+人工变量
     surplus_start = orignal_var + extra_var
     basis_start = surplus_start + surplus_count
+    basis_indices = []
 
     for i,type in enumerate(constraint_types):
         if type == "<=":
             final_A[i,basis_start] = 1
+            basis_indices.append(basis_start)
             basis_start += 1
         elif type == ">=":
             final_A[i,surplus_start] = -1
             final_A[i,basis_start] = 1
+            basis_indices.append(basis_start)
             final_c[basis_start] = M
             surplus_start += 1
             basis_start += 1
         else:
-            final_a[i,basis_start] = 1
+            final_A[i,basis_start] = 1
+            basis_indices.append(basis_start)
             final_c[basis_start] = M
             basis_start += 1
     final_variable_type = [">=0"] * total_var
     final_constraint_type = ["="] * len(b)
-    return final_c, final_A, b, final_variable_type, final_constraint_type
+    return final_c, final_A, b, basis_indices
 
 
 if __name__ == '__main__':
@@ -111,13 +115,14 @@ if __name__ == '__main__':
          [3, 4, 5]]
     b = [4, 3, 5]
     sense = 'max'
-    constraint_types = ['>=', '>=', '>=']
+    constraint_types = ['<=', '>=', '=']
     variable_types = ['>=0', 'free', '<=0']
 
     # 转换为标准型
-    c_std, A_std, b_std, _, _ = standardization_lp(c, A, b, sense, constraint_types, variable_types)
+    c_std, A_std, b_std, basis_indices= standardization_lp(c, A, b, sense, constraint_types, variable_types)
     print("\n最终结果:")
-    print("转换后的目标函数系数：", c_std)
-    print("转换后的约束矩阵：")
+    print("转换后的价值向量：", c_std)
+    print("LHS：")
     print(A_std)
-    print("约束右侧值：", b_std)
+    print("RHS：", b_std)
+    print(basis_indices)
